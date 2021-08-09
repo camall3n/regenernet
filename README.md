@@ -10,11 +10,10 @@ An older version of this paper was presented at the 2020 NeurIPS workshop on Dee
 
 #### Download the repo:
 ```
-git clone --recurse-submodules https://github.com/camall3n/markov-state-abstractions.git
+git clone --recurse-submodules https://github.com/camall3n/regenernet.git
 ```
 
 #### Install the dependencies:
 
-The visual gridworld experiments and the DeepMind Control experiments were originally developed in separate repositories, so it's better to use a separate virtual environment for each. The installation instructions can be found in the respective README files in each experiment folder:
+The installation instructions can be found in the gridworld README file inside the experiment folder:
 - Visual Gridworld: `markov_abstr/gridworld/README.md`
-- DeepMind Control: `markov_abstr/dmcontrol/README.md`
