@@ -5,6 +5,7 @@ import os
 import pandas as pd
 import seaborn as sns
 import seeding
+import torch
 from tqdm import tqdm
 
 from models.nnutils import Reshape
@@ -21,8 +22,6 @@ parser = get_parser()
 # yapf: disable
 parser.add_argument('-a','--agent', type=str, required=True,
                     choices=['random','dqn'], help='Type of agent to train')
-parser.add_argument('-n','--n_trials', type=int, default=1,
-                    help='Number of trials')
 parser.add_argument('-e','--n_episodes', type=int, default=10,
                     help='Number of episodes per trial')
 parser.add_argument('-m','--max_steps', type=int, default=1000,
@@ -147,15 +146,21 @@ if args.video:
     ax = ax.flatten()
     fig.show()
 
-    def plot_value_function(ax):
+    def plot_value_function(ax, clip_value=False):
         s = np.asarray([[np.asarray([x, y]) for x in range(args.cols)] for y in range(args.rows)])
-        v = np.asarray(agent.q_values(s).detach().numpy()).max(-1)
+        torch_s = torch.as_tensor(s).float()
+        v = np.asarray(agent.q(torch_s).detach().numpy()).max(-1)
         xy = OffsetSensor(offset=(0.5, 0.5)).observe(s).reshape(args.cols, args.rows, -1)
-        ax.contourf(np.arange(0.5, args.cols + 0.5),
+        if clip_value:
+            ax.contourf(np.arange(0.5, args.cols + 0.5),
                     np.arange(0.5, args.rows + 0.5),
                     v,
-                    vmin=-10,
-                    vmax=0)
+                    vmin=0,
+                    vmax=1)
+        else:
+            ax.contourf(np.arange(0.5, args.cols + 0.5),
+                    np.arange(0.5, args.rows + 0.5),
+                    v)
 
     def plot_states(ax):
         data = pd.DataFrame(agent.replay.memory)
@@ -174,16 +179,20 @@ if args.video:
                         legend=False)
         ax.invert_yaxis()
 
-for trial in tqdm(range(args.n_trials), desc='trials'):
-    env.reset_goal()
-    agent.reset()
-    total_reward = 0
-    total_steps = 0
-    losses = []
-    rewards = []
-    value_fn = []
+agent.reset()
+total_reward = 0
+total_steps = 0
+total_episodes = 0
+losses = []
+rewards = []
+value_fn = []
+goal_curriculum = [(3,0), (6,0), (9,0), (9,3), (9,6), (9,9), (6,9), (3,9), (0,9), (0,6), (0,3)]
+n_trials = len(goal_curriculum)
+for trial in tqdm(range(n_trials), desc='trials'):
+    goal_position = goal_curriculum[trial]
+    env.reset_goal(position=goal_position)
     for episode in tqdm(range(args.n_episodes), desc='episodes'):
-        env.reset_agent()
+        env.reset_agent(position=(0,0))
         ep_rewards = []
         for step in range(args.max_steps):
             s = env.get_state()
@@ -206,20 +215,24 @@ for trial in tqdm(range(args.n_trials), desc='trials'):
 
         if args.video:
             [a.clear() for a in ax]
-            plot_value_function(ax[0])
+            plot_value_function(ax[0], clip_value=True)
+            plot_value_function(ax[1], clip_value=False)
             env.plot(ax[0])
-            ax[1].plot(value_fn)
+            env.plot(ax[1])
+            # ax[1].plot(value_fn)
+            # ax[1].set_ylim([-10, 0])
             ax[2].plot(rewards, c='C3')
             ax[3].plot(losses, c='C1')
             # plot_states(ax[3])
-            ax[1].set_ylim([-10, 0])
             fig.canvas.draw()
             fig.canvas.flush_events()
 
+        total_episodes += 1
         total_steps += step
         score_info = {
             'trial': trial,
             'episode': episode,
+            'total_episodes': total_episodes,
             'reward': sum(ep_rewards),
             'total_reward': total_reward,
             'total_steps': total_steps,

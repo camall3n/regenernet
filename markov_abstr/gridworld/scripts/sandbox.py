@@ -7,9 +7,9 @@ import seeding
 import torch
 from tqdm import tqdm
 
-from ..visgrid.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
-from ..visgrid import sensors
-from ..visgrid.sensors import *
+from markov_abstr.gridworld.visgrid.gridworld import GridWorld, MazeWorld, SpiralWorld, LoopWorld
+from markov_abstr.gridworld.visgrid import sensors
+from markov_abstr.gridworld.visgrid.sensors import *
 # from ..models.nnutils import BilinearOuterProduct
 # from ..models.contrastivenet import FullPairwiseContrastiveNet
 

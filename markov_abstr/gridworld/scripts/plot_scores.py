@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import seaborn as sns
 
-from ..visgrid.utils import load_experiment
+from visgrid.utils import load_experiment
 
 def load_experiment(tag):
     logfiles = sorted(glob.glob(os.path.join('results/scores', tag + '*', 'scores-*.txt')))
@@ -16,7 +16,7 @@ def load_experiment(tag):
 
     def read_log(log):
         results = [json.loads(item) for item in log]
-        data = smooth(pd.DataFrame(results), 25)[::25]
+        data = smooth(pd.DataFrame(results), 10)
         return data
 
     results = [read_log(log) for log in logs]
@@ -33,37 +33,9 @@ def smooth(data, n):
     data[numeric_cols] = data[numeric_cols].rolling(n).mean()
     return data
 
-labels = ['tag', 'features', 'grid_type']
+labels = ['tag']
 experiments = [
-    # ('dqn-spiral-markov', 'markov', 'spiral'),
-    # ('spiral-relu-no-inv', 'markov-inv+relu', 'spiral'),
-    # ('dqn-spiral-expert', 'expert', 'spiral'),
-    # ('dqn-spiral-smooth', 'markov+smooth', 'spiral'),
-    # ('dqn-spiral-onehot', 'onehot', 'spiral'),
-    ('dqn-maze-markov-10k-retrain', 'markov', 'maze'),
-    ('maze-relu-no-inv-retrain', 'markov_-inv_+relu', 'maze'),
-    ('dqn-maze-expert', 'true-xy', 'maze'),
-    # ('dqn-maze-xy-noise', 'noisy-xy', 'maze'),
-    # ('dqn-maze-smooth-retrain', 'markov_+relu', 'maze'),
-    ('dqn-maze-visual', 'visual', 'maze'),
-    # ('dqn-maze-smooth', 'markov+smooth', 'maze'),
-    # ('dqn-maze-onehot', 'onehot', 'maze'),
-]
-experiments = [
-    # ('dqn-spiral-markov', 'markov', 'spiral'),
-    # ('spiral-relu-no-inv', 'markov-inv+relu', 'spiral'),
-    # ('dqn-spiral-expert', 'expert', 'spiral'),
-    # ('dqn-spiral-smooth', 'markov+smooth', 'spiral'),
-    # ('dqn-spiral-onehot', 'onehot', 'spiral'),
-    ('dqn-fixed-maze-coinv1.0-10k', 'markov_coinv+relu', 'maze'),
-    ('dqn-retrain-maze-coinv1.0-10k', 'markov_coinv+relu_retrain', 'maze'),
-    ('maze-relu-no-inv-retrain', 'markov_-inv_+relu', 'maze'),
-    ('dqn-maze-expert', 'true-xy', 'maze'),
-    # ('dqn-maze-xy-noise', 'noisy-xy', 'maze'),
-    # ('dqn-maze-smooth-retrain', 'markov_+relu', 'maze'),
-    ('dqn-maze-visual', 'visual', 'maze'),
-    # ('dqn-maze-smooth', 'markov+smooth', 'maze'),
-    # ('dqn-maze-onehot', 'onehot', 'maze'),
+    ('test-foo'),
 ]
 data = pd.concat([load_experiment(e[0]) for e in experiments],
                  join='outer',
@@ -71,21 +43,21 @@ data = pd.concat([load_experiment(e[0]) for e in experiments],
                  names=labels).reset_index(level=list(range(len(labels))))
 
 # plt.rcParams.update({'font.size': 10})
-p = sns.color_palette(n_colors=len(data['features'].unique()))
+p = sns.color_palette(n_colors=1)
 p = sns.color_palette('Set1', n_colors=9, desat=0.5)
 red, blue, green, purple, orange, yellow, brown, pink, gray = p
-p = [pink, red, orange, yellow, purple]
+p = [blue]
 g = sns.relplot(
-    x='episode',
+    x='total_episodes',
     y='reward',
     kind='line',
     data=data,
     height=4,
-    alpha=0.2,
-    hue='features',
-    style='features',
+    alpha=1,
+    # hue='features',
+    # style='features',
     # units='seed', estimator=None,
-    col='grid_type',  #col_wrap=2,
+    # col='grid_type',  #col_wrap=2,
     # legend=False,
     facet_kws={
         'sharey': True,
